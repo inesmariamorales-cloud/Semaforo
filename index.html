@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Semáforo del ruido</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f3f6fb;
+      color: #1e293b;
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+    }
+    .header p {
+      margin: 0;
+      color: #475569;
+      font-size: 1.1rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.4fr 0.7fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .badge {
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #fff;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+      white-space: nowrap;
+    }
+    .main-panel {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .main-panel { grid-template-columns: 1fr; }
+    }
+    .meter-box {
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      border-radius: 24px;
+      padding: 20px;
+    }
+    .meter-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+      margin-bottom: 16px;
+    }
+    .db-label {
+      color: #64748b;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+    }
+    .db-value {
+      font-size: clamp(4rem, 8vw, 6rem);
+      font-weight: 900;
+      line-height: 1;
+      margin: 4px 0;
+    }
+    .db-sub {
+      color: #475569;
+      font-size: 1.1rem;
+    }
+    .mini-scale {
+      width: 92px;
+      background: #f1f5f9;
+      border-radius: 18px;
+      padding: 12px;
+      text-align: center;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+    .mini-scale-track {
+      margin-top: 8px;
+      height: 150px;
+      border-radius: 12px;
+      background: #e2e8f0;
+      padding: 8px;
+      display: flex;
+      align-items: end;
+    }
+    .mini-scale-fill {
+      width: 100%;
+      border-radius: 10px;
+      transition: height 0.2s ease;
+    }
+    .bar-track {
+      height: 28px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.2s ease;
+    }
+    .lights {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .light-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+      border: 4px solid transparent;
+    }
+    .light-dot {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      margin: 0 auto 12px;
+    }
+    .message {
+      margin-top: 18px;
+      border-radius: 24px;
+      padding: 18px;
+      font-size: 1.4rem;
+      font-weight: 800;
+      text-align: center;
+      color: white;
+    }
+    .controls {
+      background: #f1f5f9;
+      border-radius: 24px;
+      padding: 18px;
+    }
+    .controls h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 1.2rem;
+    }
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    button {
+      border: none;
+      border-radius: 16px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: #0f172a;
+      color: white;
+    }
+    button.secondary {
+      background: white;
+      color: #0f172a;
+      border: 1px solid #cbd5e1;
+    }
+    button.danger {
+      background: #dc2626;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .panel {
+      background: white;
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05);
+    }
+    .panel p {
+      color: #475569;
+    }
+    .warning {
+      background: #fff7ed;
+      color: #b45309;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 0.95rem;
+      margin-top: 10px;
+    }
+    .range-row {
+      margin-bottom: 16px;
+    }
+    .range-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.95rem;
+      color: #475569;
+      margin-bottom: 8px;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
+    .side-card h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+    .side-card p {
+      color: #475569;
+      margin: 8px 0;
+      line-height: 1.5;
+    }
+    .green { background: #22c55e; }
+    .yellow { background: #facc15; }
+    .red { background: #ef4444; }
+    .green-text { color: #15803d; }
+    .yellow-text { color: #a16207; }
+    .red-text { color: #b91c1c; }
+    .ring-green { border-color: #86efac; }
+    .ring-yellow { border-color: #fde68a; }
+    .ring-red { border-color: #fca5a5; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>Semáforo del ruido</h1>
+      <p>Herramienta visual para 1º de ESO. Sirve en iPad, ordenador o pizarra digital.</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="topline">
+          <h2 style="margin:0; font-size:1.6rem;">Indicador en directo</h2>
+          <div id="badge" class="badge green-text">BUEN NIVEL</div>
+        </div>
+
+        <div class="main-panel">
+          <div>
+            <div class="meter-box">
+              <div class="meter-head">
+                <div>
+                  <div class="db-label">Nivel actual</div>
+                  <div id="dbValue" class="db-value">35</div>
+                  <div class="db-sub">dB aprox.</div>
+                </div>
+                <div class="mini-scale">
+                  Escala
+                  <div class="mini-scale-track">
+                    <div id="miniFill" class="mini-scale-fill green" style="height: 10%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="bar-track">
+                <div id="barFill" class="bar-fill green" style="width: 8%"></div>
+              </div>
+            </div>
+
+            <div class="lights">
+              <div id="cardGreen" class="light-card ring-green">
+                <div class="light-dot green"></div>
+                <div style="font-weight:700;">Verde</div>
+                <div style="color:#64748b; font-size:0.95rem;">Trabajo correcto</div>
+              </div>
+              <div id="cardYellow" class="light-card">
+                <div class="light-dot yellow"></div>
+                <div style="font-weight:700;">Amarillo</div>
+                <div style="color:#64748b; font-size:0.95rem;">Bajad la voz</div>
+              </div>
+              <div id="cardRed" class="light-card">
+                <div class="light-dot red"></div>
+                <div style="font-weight:700;">Rojo</div>
+                <div style="color:#64748b; font-size:0.95rem;">Demasiado ruido</div>
+              </div>
+            </div>
+
+            <div id="message" class="message green">Muy bien, el nivel de ruido es adecuado.</div>
+          </div>
+
+          <div class="controls">
+            <h2>Controles</h2>
+
+            <div class="button-row">
+              <button id="btnMic">Modo micrófono</button>
+              <button id="btnSim" class="secondary">Simulación</button>
+            </div>
+
+            <div id="micPanel" class="panel">
+              <p>Usa el micrófono del dispositivo para medir el sonido ambiente de forma visual.</p>
+              <button id="btnStart">Activar micrófono</button>
+              <button id="btnStop" class="danger" style="display:none; margin-top:10px;">Detener micrófono</button>
+              <div id="warning" class="warning" style="display:none;"></div>
+            </div>
+
+            <div id="simPanel" class="panel" style="display:none;">
+              <div class="range-row">
+                <div class="range-head">
+                  <span>Ruido simulado</span>
+                  <strong><span id="simValue">52</span> dB</strong>
+                </div>
+                <input id="simRange" type="range" min="30" max="100" step="1" value="52" />
+              </div>
+              <p>Este modo sirve si la pizarra digital no tiene micrófono o si quieres enseñarlo sin permisos.</p>
+            </div>
+
+            <div class="panel">
+              <div class="range-row">
+                <div class="range-head">
+                  <span>Umbral amarillo</span>
+                  <strong><span id="yellowValue">55</span> dB</strong>
+                </div>
+                <input id="yellowRange" type="range" min="40" max="80" step="1" value="55" />
+              </div>
+
+              <div class="range-row">
+                <div class="range-head">
+                  <span>Umbral rojo</span>
+                  <strong><span id="redValue">70</span> dB</strong>
+                </div>
+                <input id="redRange" type="range" min="50" max="95" step="1" value="70" />
+              </div>
+
+              <button id="btnReset" class="secondary" style="width:100%;">Restaurar valores</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card side-card" style="margin-bottom:20px;">
+          <h3>Cómo subirlo</h3>
+          <p>1. Guarda este archivo con el nombre <strong>index.html</strong>.</p>
+          <p>2. Súbelo a GitHub Pages, Netlify o cualquier web con <strong>HTTPS</strong>.</p>
+          <p>3. Ábrelo en Safari desde la dirección web.</p>
+          <p>4. Pulsa <strong>Activar micrófono</strong> y acepta el permiso.</p>
+        </div>
+
+        <div class="card side-card">
+          <h3>Importante</h3>
+          <p>Los dB son <strong>aproximados</strong>. Esta herramienta es visual y educativa.</p>
+          <p>El micrófono solo funciona bien si la página está abierta desde una web segura, normalmente <strong>https://</strong>.</p>
+          <p>Si el navegador o la pizarra no dejan usar el micro, puedes usar el modo <strong>Simulación</strong>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let mode = "micro";
+    let hasMicSupport = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    let isListening = false;
+    let db = 35;
+    let simulatedDb = 52;
+    let yellowThreshold = 55;
+    let redThreshold = 70;
+
+    let audioContext = null;
+    let analyser = null;
+    let stream = null;
+    let source = null;
+    let rafId = null;
+
+    const badge = document.getElementById("badge");
+    const dbValue = document.getElementById("dbValue");
+    const miniFill = document.getElementById("miniFill");
+    const barFill = document.getElementById("barFill");
+    const message = document.getElementById("message");
+    const cardGreen = document.getElementById("cardGreen");
+    const cardYellow = document.getElementById("cardYellow");
+    const cardRed = document.getElementById("cardRed");
+    const warning = document.getElementById("warning");
+    const micPanel = document.getElementById("micPanel");
+    const simPanel = document.getElementById("simPanel");
+    const btnMic = document.getElementById("btnMic");
+    const btnSim = document.getElementById("btnSim");
+    const btnStart = document.getElementById("btnStart");
+    const btnStop = document.getElementById("btnStop");
+    const simRange = document.getElementById("simRange");
+    const simValue = document.getElementById("simValue");
+    const yellowRange = document.getElementById("yellowRange");
+    const yellowValue = document.getElementById("yellowValue");
+    const redRange = document.getElementById("redRange");
+    const redValue = document.getElementById("redValue");
+    const btnReset = document.getElementById("btnReset");
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function getVisibleDb() {
+      return mode === "simulacion" ? simulatedDb : db;
+    }
+
+    function getState(currentDb) {
+      if (currentDb >= redThreshold) {
+        return {
+          label: "MUCHO RUIDO",
+          color: "red",
+          textClass: "red-text",
+          ring: "ring-red",
+          message: "Bajad la voz, por favor."
+        };
+      }
+      if (currentDb >= yellowThreshold) {
+        return {
+          label: "ATENCIÓN",
+          color: "yellow",
+          textClass: "yellow-text",
+          ring: "ring-yellow",
+          message: "Hay bastante ruido en clase."
+        };
+      }
+      return {
+        label: "BUEN NIVEL",
+        color: "green",
+        textClass: "green-text",
+        ring: "ring-green",
+        message: "Muy bien, el nivel de ruido es adecuado."
+      };
+    }
+
+    function clearRings() {
+      cardGreen.className = "light-card";
+      cardYellow.className = "light-card";
+      cardRed.className = "light-card";
+    }
+
+    function render() {
+      const currentDb = getVisibleDb();
+      const state = getState(currentDb);
+      const scale = clamp((currentDb - 30) / 70, 0, 1);
+      const percent = clamp(((currentDb - 30) / 70) * 100, 4, 100);
+
+      dbValue.textContent = currentDb;
+      badge.textContent = state.label;
+      badge.className = "badge " + state.textClass;
+      message.textContent = state.message;
+      message.className = "message " + state.color;
+      miniFill.className = "mini-scale-fill " + state.color;
+      miniFill.style.height = Math.max(scale * 100, 8) + "%";
+      barFill.className = "bar-fill " + state.color;
+      barFill.style.width = percent + "%";
+
+      clearRings();
+      if (currentDb < yellowThreshold) cardGreen.classList.add("ring-green");
+      else if (currentDb < redThreshold) cardYellow.classList.add("ring-yellow");
+      else cardRed.classList.add("ring-red");
+
+      simValue.textContent = simulatedDb;
+      yellowValue.textContent = yellowThreshold;
+      redValue.textContent = redThreshold;
+
+      btnMic.className = mode === "micro" ? "" : "secondary";
+      btnSim.className = mode === "simulacion" ? "" : "secondary";
+      micPanel.style.display = mode === "micro" ? "block" : "none";
+      simPanel.style.display = mode === "simulacion" ? "block" : "none";
+      btnStart.style.display = isListening ? "none" : "inline-block";
+      btnStop.style.display = isListening ? "inline-block" : "none";
+    }
+
+    function setWarning(text) {
+      if (!text) {
+        warning.style.display = "none";
+        warning.textContent = "";
+        return;
+      }
+      warning.style.display = "block";
+      warning.textContent = text;
+    }
+
+    function stopListening() {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (source) {
+        try { source.disconnect(); } catch (e) {}
+      }
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      if (audioContext && audioContext.state !== "closed") {
+        audioContext.close();
+      }
+      rafId = null;
+      source = null;
+      stream = null;
+      analyser = null;
+      audioContext = null;
+      isListening = false;
+      render();
+    }
+
+    async function startListening() {
+      if (!hasMicSupport) {
+        setWarning("Este dispositivo o navegador no permite usar el micrófono desde esta app.");
+        return;
+      }
+
+      if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+        setWarning("El micrófono suele requerir una web segura con https://. Sube este archivo a GitHub Pages, Netlify o similar.");
+        return;
+      }
+
+      setWarning("");
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        audioContext = new AudioCtx();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048;
+        source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+        isListening = true;
+        render();
+
+        const dataArray = new Uint8Array(analyser.fftSize);
+
+        function updateLevel() {
+          if (!analyser) return;
+          analyser.getByteTimeDomainData(dataArray);
+
+          let sumSquares = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            const normalized = (dataArray[i] - 128) / 128;
+            sumSquares += normalized * normalized;
+          }
+
+          const rms = Math.sqrt(sumSquares / dataArray.length);
+          const approxDb = clamp(35 + rms * 90, 30, 100);
+          db = Math.round(approxDb);
+          render();
+          rafId = requestAnimationFrame(updateLevel);
+        }
+
+        updateLevel();
+      } catch (error) {
+        console.error(error);
+        mode = "simulacion";
+        isListening = false;
+        setWarning("No se pudo acceder al micrófono. Revisa el permiso del navegador o usa el modo simulación.");
+        render();
+      }
+    }
+
+    btnMic.addEventListener("click", () => {
+      mode = "micro";
+      render();
+    });
+
+    btnSim.addEventListener("click", () => {
+      mode = "simulacion";
+      stopListening();
+      render();
+    });
+
+    btnStart.addEventListener("click", startListening);
+    btnStop.addEventListener("click", stopListening);
+
+    simRange.addEventListener("input", (e) => {
+      simulatedDb = Number(e.target.value);
+      render();
+    });
+
+    yellowRange.addEventListener("input", (e) => {
+      yellowThreshold = Number(e.target.value);
+      if (yellowThreshold >= redThreshold) {
+        redThreshold = Math.min(yellowThreshold + 1, 95);
+        redRange.value = redThreshold;
+      }
+      render();
+    });
+
+    redRange.addEventListener("input", (e) => {
+      redThreshold = Number(e.target.value);
+      if (redThreshold <= yellowThreshold) {
+        yellowThreshold = Math.max(redThreshold - 1, 40);
+        yellowRange.value = yellowThreshold;
+      }
+      render();
+    });
+
+    btnReset.addEventListener("click", () => {
+      simulatedDb = 52;
+      yellowThreshold = 55;
+      redThreshold = 70;
+      simRange.value = simulatedDb;
+      yellowRange.value = yellowThreshold;
+      redRange.value = redThreshold;
+      render();
+    });
+
+    if (!hasMicSupport) {
+      mode = "simulacion";
+      setWarning("Este dispositivo o navegador no permite usar el micrófono desde esta app.");
+    }
+
+    window.addEventListener("beforeunload", stopListening);
+    render();
+  </script>
+</body>
+</html>
